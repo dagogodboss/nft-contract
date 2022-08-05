@@ -23,6 +23,7 @@ contract CryptonianWar is
     using SafeMathUpgradeable for uint256;
     using CountersUpgradeable for CountersUpgradeable.Counter;
     CountersUpgradeable.Counter private _listId;
+    // mapping(uint256 => mapping(address => uint256)) private _balances;
 
     bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
@@ -32,6 +33,18 @@ contract CryptonianWar is
     address[] AddressList;
 
     mapping(address => uint256) WhiteList;
+
+    /**
+     * @dev Equivalent to multiple {TransferSingle} events, where `operator`, `from` and `to` are the same for all
+     * transfers.
+     */
+    event OneToManyBatchMint(
+        address indexed operator,
+        address indexed from,
+        address[] to,
+        uint256[] ids,
+        uint256[] values
+    );
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -60,7 +73,7 @@ contract CryptonianWar is
         address[] memory _receiver,
         uint256[] memory amount,
         uint256[] memory ids
-    ) public onlyRole(MINTER_ROLE) returns(bool status) {
+    ) public onlyRole(MINTER_ROLE) returns (bool status) {
         for (uint256 i = 0; i < _receiver.length; i++) {
             _mint(_receiver[i], ids[i], amount[i], "");
         }
@@ -77,6 +90,24 @@ contract CryptonianWar is
         for (uint256 i = 0; i < _receiver.length; i++) {
             safeTransferFrom(msg.sender, _receiver[i], ids[i], amounts[i], "");
         }
+    }
+
+    function oneToManyMint(
+        address[] memory _receiver,
+        uint256[] memory amounts,
+        uint256[] memory ids
+    ) public onlyRole(MINTER_ROLE) {
+        require(ids.length == _receiver.length, "Crytonian-War: ids and _receiver length mismatch");
+        address operator = _msgSender();
+        for (uint256 i = 0; i < _receiver.length; i++) {
+            address to = _receiver[i];
+            bytes memory data = '';
+        _beforeTokenTransfer(operator, address(0), to, ids, amounts, data);
+
+            _balances[ids[i]][to] = 1;
+            _afterTokenTransfer(operator, address(0), to, ids, amounts, data);
+        }
+        emit OneToManyBatchMint(operator, address(0), _receiver, ids, amounts);
     }
 
     function whiteList(address[] memory allowedList)

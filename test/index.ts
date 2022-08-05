@@ -88,3 +88,33 @@ describe("NFT Minting", async () => {
     await expect(await warContract.balanceOf(userFour.address, 4)).eq(1);
   });
 });
+
+describe("Mint NFT One TO Many with single event", async () => {
+  it("should mint many nfts to many addresses", async () => {
+    const mint = warContract.oneToManyMint(
+      [
+        userOne.address,
+        userTwo.address,
+        userTwo.address,
+        userThree.address,
+        userFour.address,
+        userFive.address,
+      ],
+      [2, 2, 1, 1, 2, 1],
+      [1, 2, 3, 4, 5, 6]
+    );
+    expect(await mint).emit("CryptonianWar", "OneToManyBatchMint");
+  });
+  it("should update the balance of the userOne", async () => {
+    await expect(await warContract.balanceOf(userOne.address, 1)).eq(1);
+  });
+  it("should update the balance of the userTow", async () => {
+    await expect(await warContract.balanceOf(userTwo.address, 2)).eq(1);
+  });
+  it("should update the balance of the userTwo", async () => {
+    await expect(await warContract.balanceOf(userTwo.address, 3)).eq(1);
+  });
+  it("should update the balance of the userFour", async () => {
+    await expect(await warContract.balanceOf(userFour.address, 5)).eq(1);
+  });
+});
